@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.0.0"
+	name="egg">
+	<feature name="egg-features" version="1.0">
+		<feature version="3.2.14.RELEASE_1">spring-jdbc</feature>
+		<feature>camel-sql</feature>
+		<feature>camel-jdbc</feature>
+		<feature>jndi</feature>
+		<feature>war</feature>
+		<feature>activemq</feature>
+		<feature>activemq-web-console</feature>
+		<feature>activemq-broker</feature>
+		<feature>transaction</feature>
+		<bundle>wrap:mvn:com.oracle/ojdbc6/12.1.0.2.0</bundle>
+		<bundle>wrap:mvn:commons-dbcp/commons-dbcp/1.4</bundle>
+		<bundle>mvn:com.atomikos/transactions-osgi/4.0.2</bundle>
+	</feature>
+</features>

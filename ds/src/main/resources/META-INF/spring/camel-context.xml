@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+	<bean id="atomikosXaDataSourceBean" class="com.atomikos.jdbc.AtomikosDataSourceBean">
+		<property name="uniqueResourceName" value="oracleXA" />
+		<property name="testQuery" value="select * from dual" />
+		<property name="xaDataSource" ref="dataSourceXA" />
+		<property name="minPoolSize" value="1" />
+		<property name="maxPoolSize" value="5" />
+		<property name="reapTimeout" value="0" />
+	</bean>
+
+	<bean id="dataSourceXA" class="oracle.jdbc.xa.client.OracleXADataSource">
+		<property name="URL" value="jdbc:oracle:thin:@vm-test-mix:1521:eggtest" />
+		<property name="user" value="egg_4_5_5" />
+		<property name="password" value="egg_4_5_5" />
+		<property name="connectionCachingEnabled" value="false" />
+	</bean>
+
+	<osgi:service interface="javax.sql.DataSource" ref="atomikosXaDataSourceBean">
+		<osgi:service-properties>
+			<entry key="osgi.jndi.service.name" value="jdbc/oracleXA" />
+			<entry key="datasource.name" value="oracleXA" />
+		</osgi:service-properties>
+	</osgi:service>
+
+</beans>

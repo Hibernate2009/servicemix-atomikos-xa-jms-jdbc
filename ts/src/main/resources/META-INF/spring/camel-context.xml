@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:osgi="http://www.springframework.org/schema/osgi"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+  	<bean id="jtaTxMgr" class="org.springframework.transaction.jta.JtaTransactionManager">
+		<property name="transactionManager" ref="txMgr" />
+		<property name="userTransaction" ref="userTransaction" />
+	</bean>
+
+	<bean id="txMgr" class="com.atomikos.icatch.jta.UserTransactionManager" init-method="init" destroy-method="close">
+		<property name="forceShutdown" value="false" />
+	</bean>
+
+	<bean id="userTransaction" class="com.atomikos.icatch.jta.UserTransactionImp">
+		<property name="transactionTimeout" value="120" />
+	</bean>
+	
+	<osgi:service interface="org.springframework.transaction.PlatformTransactionManager" ref="jtaTxMgr">
+		<osgi:service-properties>
+			<entry key="transaction.manager.name" value="atomikos" />
+		</osgi:service-properties>
+	</osgi:service>
+</beans>

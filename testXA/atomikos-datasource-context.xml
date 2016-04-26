@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+	
+	<bean id="jtaTxMgr" class="org.springframework.transaction.jta.JtaTransactionManager">
+		<property name="transactionManager" ref="txMgr" />
+		<property name="userTransaction" ref="userTransaction" />
+	</bean>
+	
+	<bean id="txMgr" class="com.atomikos.icatch.jta.UserTransactionManager" init-method="init" destroy-method="close">
+		<property name="forceShutdown" value="false" />
+	</bean>
+	
+	<bean id="userTransaction" class="com.atomikos.icatch.jta.UserTransactionImp">
+		<property name="transactionTimeout" value="120" />
+	</bean>
+	
+	<bean id="REQUIRED" class="org.apache.camel.spring.spi.SpringTransactionPolicy">
+		<property name="transactionManager" ref="jtaTxMgr" />
+		<property name="propagationBehaviorName" value="PROPAGATION_REQUIRED" />
+	</bean>
+
+
+	<bean id="atomikosXaDataSourceBean" class="com.atomikos.jdbc.AtomikosDataSourceBean">
+		<property name="uniqueResourceName" value="oracleXA123456" />
+		<property name="testQuery" value="select * from dual" />
+		<property name="xaDataSource" ref="dataSourceXA" />
+		<property name="minPoolSize" value="1" />
+		<property name="maxPoolSize" value="5" />
+		<property name="reapTimeout" value="0" />
+	</bean>
+
+	<bean id="dataSourceXA" class="oracle.jdbc.xa.client.OracleXADataSource">
+		<property name="URL" value="jdbc:oracle:thin:@vm-test-mix:1521:eggtest" />
+		<property name="user" value="egg_4_5_5" />
+		<property name="password" value="egg_4_5_5" />
+		<property name="connectionCachingEnabled" value="false" />
+	</bean>
+
+	<bean id="atomikosXaConnectionFactoryBean" class="com.atomikos.jms.AtomikosConnectionFactoryBean"
+		init-method="init" destroy-method="close">
+		<property name="uniqueResourceName" value="amq1" />
+		<property name="xaConnectionFactory" ref="jmsXaConnectionFactory" />
+		<property name="localTransactionMode" value="false" />
+		<property name="minPoolSize" value="1" />
+		<property name="maxPoolSize" value="5" />
+		<property name="reapTimeout" value="0" />
+	</bean>
+
+
+	<bean id="jmsXaConnectionFactory" class="org.apache.activemq.ActiveMQXAConnectionFactory">
+		<property name="brokerURL" value="failover:(tcp://localhost:61616)" />
+		<property name="redeliveryPolicy">
+			<bean class="org.apache.activemq.RedeliveryPolicy">
+				<property name="maximumRedeliveries" value="10" />
+			</bean>
+		</property>
+		<property name="userName" value="smx" />
+		<property name="password" value="smx" />
+	</bean>
+
+	<bean id="jmsConfig" class="org.apache.camel.component.jms.JmsConfiguration">
+		<property name="connectionFactory" ref="atomikosXaConnectionFactoryBean" />
+		<property name="transacted" value="true" />
+		<property name="transactionManager" ref="jtaTxMgr" />
+		<property name="maxConcurrentConsumers" value="1" />
+		<property name="cacheLevelName" value="CACHE_NONE" />
+	</bean>
+
+	<bean id="activemq" class="org.apache.activemq.camel.component.ActiveMQComponent">
+		<property name="configuration" ref="jmsConfig" />
+	</bean>
+	
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="atomikosXaDataSourceBean"/>
+    </bean>
+	
+	<bean id="hello" class="com.bssys.nio2.testXA.HelloBean">
+		<constructor-arg ref="jdbcTemplate"/>
+	</bean>
+
+	<camelContext xmlns="http://camel.apache.org/schema/spring">
+		<route>
+			<from uri="activemq:queue:SQL_IN" />
+			<transacted  ref="REQUIRED"/>
+			<to uri="activemq:queue:SQL_MIDLE" />
+			<bean ref="hello" method="goodlogic"/>
+			<log message="REDELIVERED: ${header.JMSRedelivered}" />
+			<!-- <bean ref="hello" method="badlogic"/> -->
+			<to uri="activemq:queue:SQL_OUT" />
+		</route>
+	</camelContext>
+
+
+
+</beans>

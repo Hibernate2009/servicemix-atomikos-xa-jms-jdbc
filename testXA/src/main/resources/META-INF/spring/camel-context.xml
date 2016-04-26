@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+	
+	<bean id="hello" class="com.bssys.nio2.testXA.HelloBean">
+		<constructor-arg ref="jdbcTemplate"/>
+	</bean>
+
+	<camelContext xmlns="http://camel.apache.org/schema/spring">
+		<route>
+			<from uri="activemqXA:queue:SQL_IN" />
+			<transacted  ref="REQUIRED"/>
+			<to uri="activemqXA:queue:SQL_MIDLE" />
+			<bean ref="hello" method="goodlogic"/>
+			<log message="REDELIVERED: ${header.JMSRedelivered}" />
+			<bean ref="hello" method="badlogic"/>
+			<to uri="activemqXA:queue:SQL_OUT" />
+		</route>
+	</camelContext>
+
+</beans>

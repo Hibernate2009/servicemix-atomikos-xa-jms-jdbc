@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:osgi="http://www.springframework.org/schema/osgi"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+	 <bean id="atomikosXaConnectionFactoryBean" class="com.atomikos.jms.AtomikosConnectionFactoryBean"
+		init-method="init" destroy-method="close">
+		<property name="uniqueResourceName" value="amq1" />
+		<property name="xaConnectionFactory" ref="jmsXaConnectionFactory" />
+		<property name="localTransactionMode" value="false" />
+		<property name="minPoolSize" value="1" />
+		<property name="maxPoolSize" value="5" />
+		<property name="reapTimeout" value="0" />
+	</bean>
+
+	<bean id="jmsXaConnectionFactory" class="org.apache.activemq.ActiveMQXAConnectionFactory">
+		<property name="brokerURL" value="failover:(tcp://localhost:61616)" />
+		<property name="redeliveryPolicy">
+			<bean class="org.apache.activemq.RedeliveryPolicy">
+				<property name="maximumRedeliveries" value="1" />
+			</bean>
+		</property>
+		<property name="userName" value="smx" />
+		<property name="password" value="smx" />
+	</bean>
+	
+	<osgi:service interface="javax.jms.ConnectionFactory" ref="atomikosXaConnectionFactoryBean">
+		<osgi:service-properties>
+			<entry key="osgi.jndi.service.name" value="jms/connectionFactory" />
+			<entry key="connection.factory.name" value="activemqXA" />
+		</osgi:service-properties>
+	</osgi:service>
+
+</beans>
